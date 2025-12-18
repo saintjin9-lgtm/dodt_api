@@ -1,0 +1,7 @@
+{
+  "name": "DOTD - Outfit of the Day",
+  "description": "AI-powered fashion stylist and outfit generator using Gemini 2.5 Flash.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

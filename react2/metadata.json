@@ -1,0 +1,7 @@
+{
+  "name": "DOTD - Fashion AI Stylist",
+  "description": "Find your most attractive self with AI-powered fashion coordination.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

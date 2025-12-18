@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Result{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div id="result-container">
+        <!-- Initial loading state -->
+        <h1 id="status-heading">결과를 생성하는 중입니다...</h1>
+        <p id="status-paragraph">잠시만 기다려 주세요.</p>
+        
+        <!-- Placeholder for the specific image -->
+        <div id="loading-image-container" class="my-4">
+            <img src="/static/files/processing_placeholder.png" alt="Processing..." style="max-width: 150px;">
+            <!-- Note: You need to place your specific image at /static/files/processing_placeholder.png -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const taskId = window.location.pathname.split('/').pop();
+        const resultContainer = document.getElementById('result-container');
+        const statusHeading = document.getElementById('status-heading');
+        const statusParagraph = document.getElementById('status-paragraph');
+        const loadingImageContainer = document.getElementById('loading-image-container');
+
+        if (!taskId) {
+            resultContainer.innerHTML = '<h1 class="text-danger">오류: 작업 ID를 찾을 수 없습니다.</h1>';
+            return;
+        }
+
+        const pollStatus = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/task_status/${taskId}`);
+                if (!response.ok) {
+                    throw new Error(`서버 상태 확인 오류: ${response.statusText}`);
+                }
+
+                const task = await response.json();
+
+                if (task.status === 'completed') {
+                    clearInterval(pollStatus);
+                    displayResult(task.result);
+                } else if (task.status === 'failed') {
+                    clearInterval(pollStatus);
+                    displayError(task.result);
+                } else {
+                    // Still processing, do nothing and wait for the next poll
+                    statusHeading.textContent = '거의 다 됐습니다...';
+                }
+
+            } catch (error) {
+                clearInterval(pollStatus);
+                displayError({ error: error.message });
+            }
+        }, 3000); // Poll every 3 seconds
+
+        function displayResult(result) {
+            statusHeading.textContent = '결과가 생성되었습니다!';
+            statusParagraph.style.display = 'none';
+            loadingImageContainer.style.display = 'none';
+
+            let mediaElement;
+            if (result.media_type === 'image') {
+                mediaElement = document.createElement('img');
+                mediaElement.src = result.media_url;
+                mediaElement.className = 'img-fluid rounded shadow-sm';
+                mediaElement.alt = result.prompt;
+            } else if (result.media_type === 'video') {
+                mediaElement = document.createElement('video');
+                mediaElement.src = result.media_url;
+                mediaElement.controls = true;
+                mediaElement.className = 'img-fluid rounded shadow-sm';
+            }
+
+            if (mediaElement) {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'mt-4';
+                resultDiv.appendChild(mediaElement);
+
+                const promptDiv = document.createElement('div');
+                promptDiv.className = 'mt-3';
+                promptDiv.innerHTML = `<p class="text-muted">${result.prompt}</p>`;
+                
+                resultContainer.appendChild(resultDiv);
+                resultContainer.appendChild(promptDiv);
+            }
+        }
+
+        function displayError(result) {
+            statusHeading.textContent = '오류가 발생했습니다';
+            statusHeading.className = 'text-danger';
+            loadingImageContainer.style.display = 'none';
+            statusParagraph.textContent = result.error || '알 수 없는 오류가 발생했습니다.';
+        }
+    });
+</script>
+{% endblock %}

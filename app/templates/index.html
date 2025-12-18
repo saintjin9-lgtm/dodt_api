@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}DOTD SERVIC{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center hero-background">
+    <div class="col-md-6 text-center">
+        <h1 class="mb-4">From Zero To LOUD</h1>
+        <!--p class="lead mb-4">당신의 스타일을 제안합니다</p-->
+        <div class="card p-4 shadow-sm ootd-card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">당신의 스타일을 제안합니다</h5>
+                <a href="/login/google" class="btn btn-lg w-100 btn-gradient-purple">
+                    <i class="bi bi-google"></i> 오늘 뭐입지? 
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-5">
+
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Public Feed</h1>
+    <p class="text-center text-muted mb-5">See what others have created</p>
+
+    <div id="feed-container" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        <!-- Feed items will be loaded here by JavaScript -->
+    </div>
+
+    <div id="loading-indicator" class="text-center mt-5">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        const feedContainer = document.getElementById('feed-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        try {
+            const response = await fetch('/api/creations/feed');
+            if (!response.ok) {
+                throw new Error(`Failed to fetch feed data: ${response.statusText}`);
+            }
+            const creations = await response.json();
+
+            loadingIndicator.style.display = 'none';
+
+            if (creations.length === 0) {
+                feedContainer.innerHTML = '<p class="text-center col-12">No creations yet. Be the first!</p>';
+                return;
+            }
+
+            creations.forEach(creation => {
+                const col = document.createElement('div');
+                col.className = 'col';
+
+                const card = document.createElement('div');
+                card.className = 'card h-100 shadow-sm';
+                
+                let mediaElement;
+                if (creation.media_type === 'image') {
+                    mediaElement = document.createElement('img');
+                    mediaElement.src = creation.media_url;
+                    mediaElement.className = 'card-img-top';
+                    mediaElement.alt = creation.prompt;
+                } else if (creation.media_type === 'video') {
+                    mediaElement = document.createElement('video');
+                    mediaElement.src = creation.media_url;
+                    mediaElement.controls = true;
+                    mediaElement.className = 'card-img-top';
+                }
+                
+                const cardBody = document.createElement('div');
+                cardBody.className = 'card-body';
+
+                const promptText = document.createElement('p');
+                promptText.className = 'card-text';
+                promptText.textContent = creation.prompt;
+
+                const cardFooter = document.createElement('div');
+                cardFooter.className = 'card-footer text-muted';
+                
+                const authorText = document.createElement('small');
+                authorText.textContent = `By: ${creation.author_name || 'Unknown'}`;
+                
+                cardBody.appendChild(promptText);
+                cardFooter.appendChild(authorText);
+                if (mediaElement) {
+                    card.appendChild(mediaElement);
+                }
+                card.appendChild(cardBody);
+                card.appendChild(cardFooter);
+                col.appendChild(card);
+                feedContainer.appendChild(col);
+            });
+
+        } catch (error) {
+            loadingIndicator.style.display = 'none';
+            feedContainer.innerHTML = `<p class="text-center text-danger col-12">Error loading feed: ${error.message}</p>`;
+            console.error(error);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <img src="{{ user.picture }}" alt="{{ user.name }}" class="rounded-circle mb-3" width="100"
+                    height="100">
+                <h5 class="card-title">{{ user.name }}</h5>
+                <p class="card-text text-muted">{{ user.email }}</p>
+                <span class="badge bg-info">{{ user.role }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <h3>Analysis History</h3>
+        {% if history %}
+        <div class="list-group">
+            {% for item in history %}
+            <div class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <a href="{{ item.filelink }}">
+                        <h5 class="mb-1">{{ item.filename }}</h5>
+                    </a>
+                    <small>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+                <p class="mb-1">
+                    Clusters: {{ item.result.clusters }} |
+                    Total Users: {{ item.result.total_users }}
+                </p>
+                <small>Personas:
+                    {% for p in item.result.personas %}
+                    {{ p.name }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </small>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            No analysis history found. <a href="/dashboard">Start a new analysis</a>.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<hr class="my-4">
+
+<div class="row">
+    <div class="col">
+        <h3 class="mb-3">My Creations</h3>
+        <div id="my-creations-grid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            <!-- Creations will be loaded here by JavaScript -->
+        </div>
+        <div id="loading-creations" class="text-center mt-3" style="display: none;">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+         <div id="no-creations-message" class="alert alert-info mt-3" style="display: none;">
+            You have not created anything yet. <a href="/create">Create something new</a>.
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const creationsGrid = document.getElementById('my-creations-grid');
+    const loadingIndicator = document.getElementById('loading-creations');
+    const noCreationsMessage = document.getElementById('no-creations-message');
+
+    async function fetchUserCreations() {
+        loadingIndicator.style.display = 'block';
+        try {
+            const response = await fetch('/user/creations');
+            if (!response.ok) {
+                throw new Error('Failed to fetch creations.');
+            }
+            const creations = await response.json();
+            renderCreations(creations);
+        } catch (error) {
+            console.error('Error fetching creations:', error);
+            creationsGrid.innerHTML = '<div class="alert alert-danger">Could not load creations.</div>';
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    }
+
+    function renderCreations(creations) {
+        if (creations.length === 0) {
+            noCreationsMessage.style.display = 'block';
+            return;
+        }
+
+        creationsGrid.innerHTML = ''; // Clear loader or previous content
+        creations.forEach(creation => {
+            const col = document.createElement('div');
+            col.className = 'col';
+            col.id = `creation-card-${creation.id}`;
+
+            let mediaElement;
+            if (creation.media_type === 'image') {
+                mediaElement = `<img src="${creation.media_url}" class="card-img-top" alt="${creation.prompt}">`;
+            } else {
+                mediaElement = `<video src="${creation.media_url}" class="card-img-top" controls></video>`;
+            }
+
+            col.innerHTML = `
+                <div class="card shadow-sm">
+                    ${mediaElement}
+                    <div class="card-body">
+                        <p class="card-text">${creation.prompt.substring(0, 100)}${creation.prompt.length > 100 ? '...' : ''}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">${new Date(creation.created_at).toLocaleDateString()}</small>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" data-creation-id="${creation.id}">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            creationsGrid.appendChild(col);
+        });
+
+        // Add event listeners to new delete buttons
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', handleDelete);
+        });
+    }
+
+    async function handleDelete(event) {
+        const creationId = event.target.dataset.creationId;
+        if (!confirm('Are you sure you want to delete this creation? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/creations/${creationId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to delete creation.');
+            }
+            
+            // Remove the card from the DOM
+            const cardToRemove = document.getElementById(`creation-card-${creationId}`);
+            if (cardToRemove) {
+                cardToRemove.remove();
+            }
+
+            // Show message if no creations are left
+            if (creationsGrid.children.length === 0) {
+                noCreationsMessage.style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error('Error deleting creation:', error);
+            alert(`Could not delete creation: ${error.message}`);
+        }
+    }
+
+    fetchUserCreations();
+});
+</script>
+{% endblock %}

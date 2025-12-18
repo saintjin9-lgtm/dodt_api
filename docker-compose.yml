@@ -1,0 +1,64 @@
+services:
+  # PostgreSQL with pgvector
+  db_postgresql:
+    image: pgvector/pgvector:pg16
+    container_name: postgresql_database
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
+      - POSTGRES_DB=main_db
+      - TZ=Asia/Seoul
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d main_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: postgres -c 'max_connections=200'
+
+  # n8n workflow automation (공식 이미지 사용)
+  app_n8n:
+    image: n8nio/n8n:latest
+    # restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=Asia/Seoul
+      - DB_TYPE=sqlite # 또는 Postgres, MySQL 가능 (여기서는 sqlite로 단순히)
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin
+      # - N8N_USER_FOLDER=/apps/learn_n8ns
+      - N8N_HOST=0.0.0.0
+      # Webhook Production URL 설정
+      - WEBHOOK_URL=http://n8n.nemone.store/
+      # 또는 도메인이 있다면: - WEBHOOK_URL=https://n8n.nemone.store/
+      # Editor Base URL (선택사항이지만 권장)
+      - N8N_EDITOR_BASE_URL=http://n8n.nemone.store/      
+      
+  # FastAPI application
+  app_fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    container_name: fastapi_app_jinja
+    ports:
+      - "8000:8000"
+      - "5500:5500"
+    environment:
+      - DATABASE_URL=postgresql://admin:admin123@db_postgresql:5432/main_db
+      - TZ=Asia/Seoul
+    depends_on:
+      db_postgresql:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    command: sleep infinity
+
+volumes:
+  n8n_data:
+
+networks:
+  default:
+    name: app_network

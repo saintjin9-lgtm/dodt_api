@@ -1,0 +1,69 @@
+body {
+    background-color: #E0E0E0;
+}
+
+.hero-background {
+    background-image: url('/static/files/main.png');
+    background-size: cover; /* Cover the entire area */
+    background-position: center; /* Center the image */
+    background-repeat: no-repeat; /* Do not repeat the image */
+    min-height: 300px; /* Minimum height for the hero section */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white; /* Text color if any text is placed here */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Text shadow for readability */
+    margin-bottom: 20px; /* Space below the hero section */
+}
+
+.card {
+    margin-bottom: 20px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.persona-card {
+    transition: transform 0.2s;
+}
+
+.persona-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-list {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.result-output-box {
+    white-space: pre-wrap;
+    background-color: #e9ecef;
+    min-height: 100px;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.ootd-card {
+    background-color: #212529; /* Bootstrap's bg-dark color */
+    color: #f8f9fa; /* Light text color for readability */
+    border: none; /* Remove border */
+    box-shadow: none; /* Remove shadow */
+}
+
+/* Ensure text inside ootd-card is readable */
+.ootd-card .card-title,
+.ootd-card .card-text,
+.ootd-card a {
+    color: #f8f9fa; /* Light color for text and links inside the card */
+}
+
+.ootd-card .btn-primary {
+    background-color: #0d6efd; /* Keep primary button color for contrast */
+    border-color: #0d6efd;
+    color: white;
+}
+
+.btn-gradient-purple {
+    background: linear-gradient(to right, #957DAD, #E0BBE4);
+    border: none;
+    color: white;
+}
