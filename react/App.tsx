@@ -63,15 +63,21 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    // Always start with a clean, unauthenticated state and default to HOME view
+    setCurrentView(ViewState.HOME);
+    setCurrentUser(null);
+    setAuthToken(null); // Ensure no stale token is used implicitly
+
     const handleOAuthCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
+      const tokenInLocalStorage = localStorage.getItem('authToken');
 
+      // Prioritize OAuth code if present
       if (code) {
         // Clean the URL
         window.history.replaceState({}, '', '/');
         try {
-          // Exchange code for token with the backend
           const response = await fetch(`/auth/rest/oauth2-credential/callback?code=${code}`);
           if (!response.ok) {
             const err = await response.json();
@@ -82,21 +88,22 @@ const App: React.FC = () => {
           
           if (access_token) {
             updateUserFromToken(access_token);
-            setCurrentView(ViewState.HOME);
+            setCurrentView(ViewState.HOME); // Stay on HOME after successful OAuth
           } else {
             throw new Error('Backend did not return an access_token.');
           }
         } catch (error) {
           console.error("Error during Google OAuth callback:", error);
           alert(`Google login failed: ${error instanceof Error ? error.message : String(error)}`);
-          setCurrentView(ViewState.LOGIN);
+          // If OAuth fails, we should still remain on HOME, not redirect to LOGIN
+          setCurrentView(ViewState.HOME); 
         }
-      } else {
-        // On initial load (no code), check for an existing token in localStorage
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          updateUserFromToken(token);
-        }
+      } 
+      // If no code, but a token exists in localStorage, try to re-authenticate
+      else if (tokenInLocalStorage) {
+        updateUserFromToken(tokenInLocalStorage);
+        // If token is invalid/expired, updateUserFromToken will clear it and currentUser.
+        // We will remain on HOME due to the initial setCurrentView(ViewState.HOME)
       }
     };
 
