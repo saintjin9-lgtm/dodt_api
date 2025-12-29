@@ -8,7 +8,7 @@ import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
 import { User, ViewState, FeedItem } from './types';
 import { MOCK_FEED_ITEMS } from './constants';
-import { setAuthToken } from './services/apiService';
+import { setAuthToken, fetchCurrentUser } from './services/apiService';
 
 // Helper function to decode Base64URL
 const decodeBase64Url = (str: string) => {
@@ -28,37 +28,19 @@ const App: React.FC = () => {
   const [likedItems, setLikedItems] = useState<FeedItem[]>(MOCK_FEED_ITEMS.filter(i => i.isLiked));
 
   // --- Authentication and Session Handling ---
-  const updateUserFromToken = (token: string) => {
+  const updateUserFromToken = async (token: string) => {
+    setAuthToken(token); // Set token first for subsequent API calls
     try {
-      const payload = JSON.parse(decodeBase64Url(token.split('.')[1]));
-      
-      const currentTime = Date.now() / 1000;
-      if (payload.exp && payload.exp < currentTime) {
-        console.error("Token expired.");
-        setAuthToken(null);
-        setCurrentUser(null);
-        return;
-      }
-      
-      // Map JWT payload to the new User type
-      const user: User = {
-        id: payload.sub,
-        email: payload.email,
-        name: payload.name,
-        avatarUrl: payload.picture,
-        role: payload.role, // Add role from token
-        // These fields are not in the token, set defaults or fetch them later
-        dailyGenerationsUsed: 0, 
-        maxDailyGenerations: 5, 
-      };
-      
-      setCurrentUser(user);
-      setAuthToken(token);
-
-    } catch (e) {
-      console.error("Failed to decode token or token is invalid.", e);
-      setAuthToken(null);
-      setCurrentUser(null);
+        const user = await fetchCurrentUser(); // fetchCurrentUser is in apiService
+        if (user) {
+            setCurrentUser(user);
+        } else {
+            // Token might be invalid on the backend, or expired and not handled by backend
+            handleLogout();
+        }
+    } catch (error) {
+        console.error("Failed to fetch user with token:", error);
+        handleLogout();
     }
   };
 

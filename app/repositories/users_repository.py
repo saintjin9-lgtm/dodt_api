@@ -44,3 +44,17 @@ class UserRepository:
         """
         creations = await conn.fetch(query, user_id)
         return [dict(row) for row in creations]
+
+    async def count_creations_today(self, conn: asyncpg.Connection, user_id: int) -> int:
+        """
+        Counts the number of creations made by a user today.
+        Note: 'today' is based on the server's timezone.
+        """
+        query = """
+            SELECT COUNT(*)
+            FROM creations
+            WHERE user_id = $1
+              AND created_at >= date_trunc('day', NOW());
+        """
+        count = await conn.fetchval(query, user_id)
+        return count if count is not None else 0

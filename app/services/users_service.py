@@ -63,3 +63,21 @@ class UserService:
         user = await self.user_repo.get_user_by_id(conn, user_id)
         # Exclude hashed_password explicitly if the repo method didn't already
         return user
+
+    async def get_user_with_stats(self, conn: asyncpg.Connection, user_data: dict) -> Dict[str, Any]:
+        """
+        Enhances user data with real-time stats like daily creation count.
+        """
+        user_id = int(user_data["sub"])
+        daily_creations = await self.user_repo.count_creations_today(conn, user_id)
+        
+        # Combine JWT data with fetched stats
+        # The user can generate 3 times per day as requested
+        user_data['dailyGenerationsUsed'] = daily_creations
+        user_data['maxDailyGenerations'] = 3
+        
+        # Rename 'picture' to 'avatarUrl' for frontend compatibility
+        if 'picture' in user_data:
+            user_data['avatarUrl'] = user_data.pop('picture')
+
+        return user_data

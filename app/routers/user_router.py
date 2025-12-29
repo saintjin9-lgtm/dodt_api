@@ -10,11 +10,15 @@ router = APIRouter(prefix="/users", tags=["users"])
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/me", response_model=Dict[str, Any])
-async def get_current_active_user(user: dict = Depends(get_current_user)):
+async def get_current_active_user(
+    user: dict = Depends(get_current_user),
+    user_service: UserService = Depends(),
+    conn: asyncpg.Connection = Depends(get_db_connection)
+):
     """
-    Retrieves the details of the currently authenticated user.
+    Retrieves the details of the currently authenticated user, including real-time stats.
     """
-    return user
+    return await user_service.get_user_with_stats(conn, user)
 
 
 @router.get("/profile")

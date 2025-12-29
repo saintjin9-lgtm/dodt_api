@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, BackgroundTasks, Request, status
 from fastapi.responses import RedirectResponse
 from app.services.creations_service import CreationsService
+from app.services.users_service import UserService
 from app.dependencies.auth import get_current_user, get_current_admin, get_optional_user
 from app.dependencies.db_connection import get_db_connection
 from app.services import task_manager
@@ -206,8 +207,10 @@ async def process_creation_task(
 async def create_task(
     background_tasks: BackgroundTasks,
     request: Request,
-    current_user: dict = Depends(get_current_user),
+    current_user_jwt: dict = Depends(get_current_user),
     service: CreationsService = Depends(),
+    user_service: UserService = Depends(),
+    conn: asyncpg.Connection = Depends(get_db_connection),
     # Form fields
     text: str = Form(""),
     gender: str = Form(""),
@@ -219,6 +222,16 @@ async def create_task(
     is_public: bool = Form(True),
     image: Optional[UploadFile] = File(None)
 ):
+    # Get user with real-time stats to enforce limit
+    current_user = await user_service.get_user_with_stats(conn, current_user_jwt)
+
+    # Enforce daily generation limit
+    if current_user["dailyGenerationsUsed"] >= current_user["maxDailyGenerations"]:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"You have reached your daily generation limit of {current_user['maxDailyGenerations']}. Please try again tomorrow."
+        )
+
     task_id = task_manager.create_task()
     user_id = int(current_user["sub"])
     
