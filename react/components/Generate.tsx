@@ -288,7 +288,13 @@ export const Generate: React.FC<GenerateProps> = ({ currentUser, onNavigate, onA
   return (
     <div className="bg-gray-50 flex justify-center font-sans text-gray-900">
       <div className="w-full max-w-md bg-white shadow-xl">
-        <div className="px-5 py-6">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center">
+            <button onClick={() => onNavigate(ViewState.HOME)} className="flex items-center text-sm font-semibold text-gray-600 hover:text-black">
+                <ChevronLeft size={20} className="mr-1" />
+                Home
+            </button>
+        </div>
+        <div className="px-5 py-6 pb-28"> {/* Added pb-28 for footer spacing */}
           
           {/* Body Info */}
           <section className="mb-8">
@@ -450,7 +456,7 @@ export const Generate: React.FC<GenerateProps> = ({ currentUser, onNavigate, onA
           </section>
         </div>
 
-        <footer className="w-full bg-white border-t border-gray-100 px-5 py-4 z-20 shadow-lg rounded-t-2xl">
+        <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-100 px-5 py-4 z-10 shadow-lg rounded-t-2xl">
           <button 
             onClick={handleGenerate}
             disabled={!selectedStyle}

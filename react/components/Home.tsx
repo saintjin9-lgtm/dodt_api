@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { FeedItem, ViewState, Creation } from '../types';
+import { FeedItem, ViewState, Creation, User } from '../types';
 import { Heart, Play, Star } from 'lucide-react';
 import { getPickedCreations, getRecentTags } from '../services/apiService';
 
@@ -44,9 +44,10 @@ const HotTagsTicker: React.FC = () => {
 interface HomeProps {
   feedItems: FeedItem[];
   onNavigate: (view: ViewState) => void;
+  currentUser: User | null;
 }
 
-export const Home: React.FC<HomeProps> = ({ feedItems, onNavigate }) => {
+export const Home: React.FC<HomeProps> = ({ feedItems, onNavigate, currentUser }) => {
   const previewItems = feedItems.slice(0, 4);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -119,11 +120,26 @@ export const Home: React.FC<HomeProps> = ({ feedItems, onNavigate }) => {
           </div>
         )}
         
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 pointer-events-none">
-          <h1 className="text-white text-3xl font-bold mb-1 tracking-tight">DOTD</h1>
-          <p className="text-white/90 text-sm font-light mb-4">
-            Finding your most attractive self <br/> with the latest AI fashion styling.
-          </p>
+        <div className="absolute inset-x-0 bottom-0 p-6 flex justify-between items-end pointer-events-none">
+          <div className="text-white">
+            <h1 className="text-3xl font-bold mb-1 tracking-tight">DOTD</h1>
+            <p className="text-sm font-light text-white/90">
+              Finding your most attractive self <br/> with the latest AI fashion styling.
+            </p>
+          </div>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent video click
+              if (currentUser) {
+                onNavigate(ViewState.CREATE);
+              } else {
+                onNavigate(ViewState.LOGIN);
+              }
+            }}
+            className="bg-black/50 text-white text-lg font-semibold px-8 py-4 rounded-lg backdrop-blur-sm pointer-events-auto hover:bg-white hover:text-black transition-colors"
+          >
+            Generate
+          </button>
         </div>
       </div>
 

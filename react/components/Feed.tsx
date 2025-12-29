@@ -193,18 +193,18 @@ export const Feed: React.FC<FeedProps> = ({ currentUser, onNavigate }) => {
 
       {/* Grid */}
       <div className="px-2">
-        <div className="columns-2 gap-2 space-y-2">
+        <div className="grid grid-cols-2 gap-2"> {/* Changed to grid grid-cols-2 gap-2 */}
           {items.map((item, index) => (
             <div 
               key={item.id} 
               onClick={() => handleItemClick(item)}
               ref={index === items.length - 1 ? lastItemElementRef : null}
-              className="break-inside-avoid relative rounded-xl overflow-hidden bg-gray-200 cursor-pointer group"
+              className="relative rounded-xl overflow-hidden bg-gray-200 cursor-pointer group aspect-[3/4]" /* Added aspect-[3/4] for consistent image size */
             >
               <img 
                 src={item.imageUrl} 
                 alt={item.description}
-                className="w-full h-auto object-cover"
+                className="w-full h-full object-cover" /* Changed to h-full to fill container */
                 loading="lazy"
               />
               

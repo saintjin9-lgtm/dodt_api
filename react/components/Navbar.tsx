@@ -62,8 +62,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, current
           <span className="text-[10px] font-medium">My Page</span>
         </button>
 
-        {/* Admin or Login/Logout */}
-        {userRole === 'ADMIN' ? (
+        {/* Admin Button (if admin) */}
+        {userRole === 'ADMIN' && (
            <button 
             onClick={() => handleNavClick(ViewState.ADMIN)}
             className={`flex flex-col items-center space-y-1 w-16 ${currentView === ViewState.ADMIN ? 'text-purple-600' : 'text-gray-400'}`}
@@ -71,7 +71,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, current
             <Shield size={24} strokeWidth={currentView === ViewState.ADMIN ? 2.5 : 2} />
             <span className="text-[10px] font-medium">Admin</span>
           </button>
-        ) : currentUser ? (
+        )}
+
+        {/* Login/Logout Button */}
+        {currentUser ? (
           <button 
             onClick={onLogout}
             className="flex flex-col items-center space-y-1 w-16 text-gray-400"

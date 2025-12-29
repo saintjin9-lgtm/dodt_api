@@ -107,9 +107,8 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (currentView) {
-      case ViewState.HOME:
-        return <Home feedItems={feedItems} onNavigate={setCurrentView} />;
-      case ViewState.FEED:
+                case ViewState.HOME:
+                  return <Home feedItems={feedItems} onNavigate={setCurrentView} currentUser={currentUser} />;      case ViewState.FEED:
         return <Feed currentUser={currentUser} onNavigate={setCurrentView} />;
       case ViewState.CREATE:
         return <Generate currentUser={currentUser} onNavigate={setCurrentView} onAddToFeed={handleAddToFeed} />;
@@ -133,7 +132,7 @@ const App: React.FC = () => {
       </div>
       
       {/* Hide Navbar on Login page */}
-      {currentView !== ViewState.LOGIN && (
+      {currentView !== ViewState.LOGIN && currentView !== ViewState.CREATE && (
         <Navbar 
           currentView={currentView} 
           onNavigate={setCurrentView} 
