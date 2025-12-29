@@ -156,14 +156,6 @@ export const MyPage: React.FC<MyPageProps> = ({ user, onNavigate }) => {
              </div>
 
              <div className="p-5 overflow-y-auto">
-               <div className="flex flex-wrap gap-2 mb-4">
-                 {(selectedCreation.tags_array || []).map(tag => (
-                   <span key={tag} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium">
-                     #{tag}
-                   </span>
-                 ))}
-               </div>
-               
                {selectedCreation.recommendation_text && (
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
                     <h4 className="font-semibold text-sm mb-2 flex items-center">
@@ -176,6 +168,14 @@ export const MyPage: React.FC<MyPageProps> = ({ user, onNavigate }) => {
                   </div>
                )}
 
+               <div className="flex flex-wrap gap-2 mb-4">
+                 {(selectedCreation.tags_array || []).map(tag => (
+                   <span key={tag} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium">
+                     #{tag}
+                   </span>
+                 ))}
+               </div>
+               
                <div className="text-sm text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
                   <p className="whitespace-pre-line">{selectedCreation.prompt}</p>
                </div>

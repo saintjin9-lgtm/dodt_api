@@ -385,3 +385,13 @@ async def admin_delete_creation(
     if not deleted_creation:
         raise HTTPException(status_code=404, detail="Creation not found or already deleted")
     return deleted_creation
+
+@router.get("/tags/recent", response_model=List[str], tags=["tags"])
+async def get_recent_tags_api(
+    service: CreationsService = Depends(),
+    conn: asyncpg.Connection = Depends(get_db_connection)
+):
+    """
+    Returns a list of the 5 most recent unique tags for the ticker.
+    """
+    return await service.get_recent_tags(conn, limit=5)

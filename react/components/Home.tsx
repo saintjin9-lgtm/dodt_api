@@ -1,7 +1,45 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { FeedItem, ViewState, Creation } from '../types';
 import { Heart, Play, Star } from 'lucide-react';
-import { getPickedCreations } from '../services/apiService';
+import { getPickedCreations, getRecentTags } from '../services/apiService';
+
+const HotTagsTicker: React.FC = () => {
+  const [tags, setTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const recentTags = await getRecentTags();
+        // To create a seamless loop, we duplicate the content.
+        const duplicatedTags = recentTags.length > 0 ? [...recentTags, ...recentTags] : [];
+        setTags(duplicatedTags);
+      } catch (error) {
+        console.error("Failed to fetch recent tags:", error);
+      }
+    };
+    fetchTags();
+  }, []);
+
+  if (tags.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="bg-black text-white text-xs py-2 w-full flex items-center">
+      <div className="bg-black font-bold uppercase tracking-wider px-4 flex-shrink-0 z-10 relative">Hot Tags</div>
+      <div className="flex-shrink-0 w-px h-4 bg-gray-600 mx-2 z-10 relative"></div> {/* Separator */}
+      <div className="flex-grow relative h-full overflow-hidden flex items-center">
+        <div className="animate-scroll-ltr flex space-x-8">
+          {tags.map((tag, index) => (
+            <span key={index} className="flex-shrink-0 whitespace-nowrap">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface HomeProps {
   feedItems: FeedItem[];
@@ -56,6 +94,7 @@ export const Home: React.FC<HomeProps> = ({ feedItems, onNavigate }) => {
 
   return (
     <div className="flex flex-col bg-gray-50">
+      <HotTagsTicker />
       {/* Video Hero Section */}
       <div 
         className="relative w-full aspect-[9/16] max-h-[70vh] overflow-hidden bg-black cursor-pointer"

@@ -4,3 +4,27 @@ html, body {
   height: 100%;
   overflow: hidden; /* Prevent body scroll, App.tsx will manage */
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+html {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.animate-scroll-ltr {
+  animation: scroll-ltr 40s linear infinite;
+}
+
+@keyframes scroll-ltr {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}

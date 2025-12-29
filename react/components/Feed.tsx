@@ -284,14 +284,6 @@ export const Feed: React.FC<FeedProps> = ({ currentUser, onNavigate }) => {
                  </div>
                </div>
 
-               <div className="flex flex-wrap gap-2 mb-4">
-                 {selectedItem.tags.map(tag => (
-                   <span key={tag} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium">
-                     #{tag}
-                   </span>
-                 ))}
-               </div>
-               
                {selectedItem.trendInsight && (
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
                     <h4 className="font-semibold text-sm mb-2 flex items-center">
@@ -303,6 +295,14 @@ export const Feed: React.FC<FeedProps> = ({ currentUser, onNavigate }) => {
                     </p>
                   </div>
                )}
+
+               <div className="flex flex-wrap gap-2 mb-4">
+                 {selectedItem.tags.map(tag => (
+                   <span key={tag} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium">
+                     #{tag}
+                   </span>
+                 ))}
+               </div>
 
                <div className="text-xs text-gray-400 pt-4 border-t border-gray-100">
                  Created at {new Date(selectedItem.createdAt).toLocaleDateString()}

@@ -164,3 +164,21 @@ class CreationsRepository:
         """Checks if a user has liked a specific creation."""
         query = "SELECT 1 FROM likes WHERE user_id = $1 AND creation_id = $2"
         return await conn.fetchval(query, user_id, creation_id) is not None
+
+    async def get_recent_tags(self, conn: asyncpg.Connection, limit: int = 5) -> List[str]:
+        """
+        Retrieves a list of the most recent unique tags.
+        """
+        query = """
+            SELECT DISTINCT tag
+            FROM (
+                SELECT unnest(tags_array) AS tag
+                FROM creations
+                WHERE tags_array IS NOT NULL AND array_length(tags_array, 1) > 0
+                ORDER BY created_at DESC
+                LIMIT 100 -- Look at last 100 tagged creations to find unique tags
+            ) AS recent_tags
+            LIMIT $1;
+        """
+        records = await conn.fetch(query, limit)
+        return [record['tag'] for record in records]

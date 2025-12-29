@@ -203,6 +203,20 @@ export const getPickedCreations = async (limit: number = 9): Promise<Creation[]>
 };
 
 /**
+ * Fetches the most recent unique tags for the ticker.
+ * @returns A promise that resolves to a list of strings (tags).
+ */
+export const getRecentTags = async (): Promise<string[]> => {
+    // This endpoint doesn't require auth, so we can use fetch directly
+    const response = await fetch(`/api/tags/recent`);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to fetch recent tags' }));
+        throw new Error(errorData.detail || 'Server error');
+    }
+    return response.json();
+};
+
+/**
  * Allows a user to like a creation.
  * @param creationId The ID of the creation to like.
  */

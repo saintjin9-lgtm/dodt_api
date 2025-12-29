@@ -134,3 +134,7 @@ class CreationsService:
         # 4. Delete the record from the database
         deleted_creation = await self.creations_repo.delete_creation_by_id(conn, creation_id)
         return deleted_creation
+
+    async def get_recent_tags(self, conn: asyncpg.Connection, limit: int = 5) -> List[str]:
+        """Retrieves a list of the most recent unique tags."""
+        return await self.creations_repo.get_recent_tags(conn, limit)
