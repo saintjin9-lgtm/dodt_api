@@ -10,3 +10,5 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 httpx
+SQLAlchemy
+psycopg2-binary

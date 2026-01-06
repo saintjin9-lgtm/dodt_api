@@ -75,6 +75,19 @@ export const loginWithEmail = async (email: string, password: string): Promise<{
     return data;
 };
 
+/**
+ * Exchange an OAuth authorization code with the backend for an access token.
+ * The backend endpoint returns JSON containing `access_token` and optional `redirect_to`.
+ */
+export const exchangeOAuthCode = async (code: string): Promise<any> => {
+    const response = await fetch(`/auth/rest/oauth2-credential/callback?code=${encodeURIComponent(code)}`);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to exchange OAuth code' }));
+        throw new Error(errorData.detail || 'Server error');
+    }
+    return response.json();
+};
+
 
 export const fetchCurrentUser = async (): Promise<any | null> => {
     try {

@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.config.settings import settings
 from app.middlewares.logging_middleware import LoggingMiddleware
 from app.routers import auth_router, analysis_router, admin_router, user_router, creation_router
+from app.routers import media_router
 import os
 from contextlib import asynccontextmanager
 
@@ -54,10 +55,12 @@ app.add_middleware(
 
 # Routers
 app.include_router(auth_router.router)
+app.include_router(auth_router.public_router)
 app.include_router(analysis_router.router)
 app.include_router(admin_router.router)
 app.include_router(user_router.router)
 app.include_router(creation_router.router)
+app.include_router(media_router.router)
 
 # Static files for user uploads
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

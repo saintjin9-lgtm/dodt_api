@@ -11,6 +11,8 @@ import asyncpg
 
 # All routes in this file will be prefixed with /auth
 router = APIRouter(prefix="/auth", tags=["auth"])
+# Public router (no prefix) for OAuth callback without /auth in path
+public_router = APIRouter()
 
 # --- Pydantic Models for Request Bodies ---
 
@@ -83,55 +85,78 @@ async def login_google():
     )
 
 @router.get("/rest/oauth2-credential/callback")
+@public_router.get("/rest/oauth2-credential/callback")
 async def google_callback(code: str, request: Request, user_service: UserService = Depends(), conn: asyncpg.Connection = Depends(get_db_connection)):
-    print("DEBUG: google_callback function entered - testing file update!")
-    token_url = "https://oauth2.googleapis.com/token"
-    data = {
-        "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
+    import traceback
+    try:
+        print("DEBUG: google_callback function entered - testing file update!")
+        token_url = "https://oauth2.googleapis.com/token"
+        data = {
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(token_url, data=data)
-        if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to get token from Google")
-        
-        token_data = response.json()
-        access_token = token_data.get("access_token")
-        
-        user_info_response = await client.get("https://www.googleapis.com/oauth2/v2/userinfo", headers={"Authorization": f"Bearer {access_token}"})
-        user_info = user_info_response.json()
-        
-        email = user_info.get("email")
-        name = user_info.get("name")
-        picture = user_info.get("picture")
-        
-        user = await user_service.get_or_create_user(conn, email, name, picture)
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(token_url, data=data)
+            if response.status_code != 200:
+                # Log Google token endpoint failure for debugging
+                try:
+                    resp_text = response.text
+                except Exception:
+                    resp_text = '<no response body>'
+                print(f"DEBUG: Google token endpoint returned {response.status_code}: {resp_text}")
+                # Try to extract JSON error if present
+                try:
+                    err_json = response.json()
+                    err_msg = err_json.get('error_description') or err_json.get('error') or str(err_json)
+                except Exception:
+                    err_msg = resp_text
+                raise HTTPException(status_code=400, detail=f"Failed to get token from Google: {err_msg}")
 
-        if not user or not user["id"]:
-            raise HTTPException(
-                status_code=500, 
-                detail="Failed to retrieve or create user with a valid ID."
+            token_data = response.json()
+            access_token = token_data.get("access_token")
+            
+            user_info_response = await client.get("https://www.googleapis.com/oauth2/v2/userinfo", headers={"Authorization": f"Bearer {access_token}"})
+            user_info = user_info_response.json()
+            
+            email = user_info.get("email")
+            name = user_info.get("name")
+            picture = user_info.get("picture")
+            
+            user = await user_service.get_or_create_user(conn, email, name, picture)
+
+            if not user or not user.get("id"):
+                raise HTTPException(
+                    status_code=500, 
+                    detail="Failed to retrieve or create user with a valid ID."
+                )
+            
+            # Create JWT
+            jwt_token = create_access_token({
+                "sub": str(user["id"]),
+                "email": user["email"],
+                "role": user["role"],
+                "name": user["name"],
+                "picture": user["picture"]
+            })
+            
+            # Instead of redirecting and setting cookie, return JSON response
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={
+                    "access_token": jwt_token,
+                    "token_type": "bearer",
+                    "redirect_to": f"{FRONTEND_REDIRECT_URI}#access_token={jwt_token}"
+                }
             )
-        
-        # Create JWT
-        jwt_token = create_access_token({
-            "sub": str(user["id"]),
-            "email": user["email"],
-            "role": user["role"],
-            "name": user["name"],
-            "picture": user["picture"]
-        })
-        
-        # Instead of redirecting and setting cookie, return JSON response
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={
-                "access_token": jwt_token,
-                "token_type": "bearer",
-                "redirect_to": f"{FRONTEND_REDIRECT_URI}#access_token={jwt_token}" # Still provide redirect URL for client-side navigation
-            }
-        )
+    except HTTPException:
+        # re-raise HTTPExceptions so FastAPI can handle them normally (they will be JSON)
+        raise
+    except Exception as e:
+        # Log full traceback for server-side debugging, but return a safe JSON error to client
+        tb = traceback.format_exc()
+        print(f"Error in google_callback: {e}\n{tb}")
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})

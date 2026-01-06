@@ -8,7 +8,7 @@ import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
 import { User, ViewState, FeedItem } from './types';
 import { MOCK_FEED_ITEMS } from './constants';
-import { setAuthToken, fetchCurrentUser } from './services/apiService';
+import { setAuthToken, fetchCurrentUser, exchangeOAuthCode } from './services/apiService';
 
 // Helper function to decode Base64URL
 const decodeBase64Url = (str: string) => {
@@ -53,14 +53,9 @@ const App: React.FC = () => {
       if (code) {
         window.history.replaceState({}, '', '/'); // Clean the URL
         try {
-          const response = await fetch(`/auth/rest/oauth2-credential/callback?code=${code}`);
-          if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Token exchange failed');
-          }
-          const data = await response.json();
+          const data = await exchangeOAuthCode(code);
           const { access_token } = data;
-          
+
           if (access_token) {
             updateUserFromToken(access_token);
             setCurrentView(ViewState.HOME); // Go to home on successful login
