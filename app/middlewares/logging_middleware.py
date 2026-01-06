@@ -2,7 +2,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,7 +14,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         process_time = time.time() - start_time
         
         # Add a custom header to verify if the server code is updated
-        response.headers["X-Server-Version"] = str(datetime.utcnow().timestamp())
+        # Use timezone-aware UTC datetime to avoid DeprecationWarning for utcnow()
+        response.headers["X-Server-Version"] = str(datetime.now(timezone.utc).timestamp())
         
         logger.info(
             f"{request.method} {request.url.path} - {response.status_code} - {process_time:.4f}s"

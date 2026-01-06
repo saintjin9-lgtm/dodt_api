@@ -1,12 +1,29 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from app.config.settings import settings
 from app.middlewares.logging_middleware import LoggingMiddleware
 from app.routers import auth_router, analysis_router, admin_router, user_router, creation_router
 import os
+from contextlib import asynccontextmanager
 
-app = FastAPI(title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
+    upload_dir = settings.UPLOAD_DIRECTORY
+    try:
+        os.makedirs(upload_dir, exist_ok=True)
+    except Exception:
+        print(f"Warning: could not create upload directory '{upload_dir}'")
+    print("Application started")
+    try:
+        yield
+    finally:
+        # shutdown
+        print("Application shutdown")
+
+
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION, lifespan=lifespan)
 
 # Middleware
 app.add_middleware(LoggingMiddleware)
@@ -46,17 +63,19 @@ app.include_router(creation_router.router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Static Files and Catch-all for SPA
-app.mount("/assets", StaticFiles(directory="react/dist/assets"), name="assets")
+react_assets_dir = os.path.join("react", "dist", "assets")
+react_index = os.path.join("react", "dist", "index.html")
+
+if os.path.isdir(react_assets_dir):
+    app.mount("/assets", StaticFiles(directory=react_assets_dir), name="assets")
+else:
+    print(f"Warning: React assets directory '{react_assets_dir}' not found; skipping mount.")
+
 
 @app.get("/{full_path:path}")
 async def serve_react_app(request: Request, full_path: str):
-    return FileResponse("react/dist/index.html")
+    if os.path.isfile(react_index):
+        return FileResponse(react_index)
+    return JSONResponse(status_code=404, content={"detail": "react/dist/index.html not found on server"})
 
-@app.on_event("startup")
-async def startup_event():
-    print("Application started")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    print("Application shutdown")
 ##
